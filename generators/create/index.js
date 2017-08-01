@@ -97,7 +97,8 @@ class GitCreateGenerator extends _yeomanGenerator.Base {
       push: true
     });
 
-    return github.getOrgs().then(orgs => {
+    return github.getOrgs().then(res => {
+      const orgs = res.data || res;
       let choices = orgs.map(function (item) {
         return item.login;
       });
@@ -120,6 +121,10 @@ class GitCreateGenerator extends _yeomanGenerator.Base {
         choices: choices
       }];
     }).then(prompts => this.prompt(prompts)).then(answers => {
+      if (answers.useOrg) {
+        this.options.org = answers.org;
+      }
+
       this.config.set('create', answers);
     }).then(() => github.getRepos(this.options)).then(repos => {
       return [{
@@ -178,12 +183,14 @@ class GitCreateGenerator extends _yeomanGenerator.Base {
   }
 
   default() {
-    let config = this.config.get('create');
+    let currentConfig = this.config.get('create');
 
-    return github.createRepository(config).then(repo => {
-      this.config.set('create', (0, _lodash2.default)(this.config.get('create'), { urls: [repo.html_url, repo.ssh_url, repo.clone_url] }));
-      this.config.save();
-    }).then(() => {
+    return github.createRepository(currentConfig).then(res => {
+      const repo = res.data || res;
+      const newConfig = (0, _lodash2.default)(this.config.get('create'), { urls: [repo.html_url, repo.ssh_url, repo.clone_url] });
+      this.config.set('create', newConfig);
+      return newConfig;
+    }).then(config => {
       if (config.init) {
         return shell.gitInit().then(() => shell.gitRemote(config));
       }
@@ -211,7 +218,12 @@ class GitCreateGenerator extends _yeomanGenerator.Base {
 
   install() {
     if (this.config.get('create').push) {
-      return shell.gitCommit().then(() => shell.gitPush());
+      return shell.gitCommit().then(() => shell.gitPush()).then(() => {
+        const config = this.config.get('create');
+        const repoName = config.name;
+        const owner = config.org || github.escapeUsername(this.options.username);
+        github.setRepoDefaults(repoName, owner);
+      });
     }
   }
 

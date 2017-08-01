@@ -1,5 +1,5 @@
 {
-  "name": "generator-github-create",
+  "name": "@appteam6/generator-github-create",
   "version": "0.5.2",
   "description": "Yeoman generator for github authentication, create repository, README Badges, local git initialization, and local commit and push.",
   "keywords": [
@@ -12,18 +12,14 @@
     "organization",
     "git",
     "authentication",
-    "authenticate",
-    "badge",
-    "badges"
+    "authenticate"
   ],
   "main": "generators/app/index.js",
   "files": [
     "generators/app",
     "generators/authenticate",
     "generators/create",
-    "generators/shared",
-    "generators/readme",
-    "generators/package"
+    "generators/shared"
   ],
   "engines": {
     "node": ">=6.4",
@@ -53,7 +49,7 @@
   },
   "homepage": "https://github.com/trainerbill/generator-github-create#readme",
   "dependencies": {
-    "github": "^3.0.0",
+    "github": "^9.2.0",
     "lodash.defaults": "^4.2.0",
     "lodash.find": "^4.6.0",
     "lodash.merge": "^4.6.0",
@@ -62,9 +58,6 @@
     "winston": "^2.2.0",
     "yeoman-generator": "^0.24.1",
     "yosay": "^1.2.0"
-  },
-  "peerDependencies": {
-    "generator-license": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
@@ -77,25 +70,10 @@
     "cross-env": "^2.0.1",
     "eslint": "^3.4.0",
     "mocha": "^3.0.2",
-    "nyc": "^8.1.0",
     "sinon": "^1.17.5",
     "sinon-as-promised": "^4.0.2",
     "sinon-chai": "^2.8.0",
     "yeoman-assert": "^2.2.1",
     "yeoman-test": "^1.4.0"
-  },
-  "nyc": {
-    "sourceMap": false,
-    "instrument": false,
-    "include": [
-      "src/**/*.es6"
-    ],
-    "exclude": [
-      "tests/**/*"
-    ],
-    "all": true,
-    "require": [
-      "babel-core/register"
-    ]
   }
 }

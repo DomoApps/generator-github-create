@@ -85,14 +85,14 @@ class GithubAuthenticateGenerator extends _yeomanGenerator.Base {
   initializing() {
 
     this.options = (0, _lodash4.default)(this.options, this.config.get('authenticate'), {
-      debug: false,
-      host: 'api.github.com',
+      debug: true,
+      host: 'git.empdev.domo.com',
       protocol: 'https',
-      path: '',
+      path: '/api/v3',
       twofactor: false,
       scopes: 'user,public_repo,repo,repo:status',
       appName: 'generator-github-create',
-      appUrl: 'https://github.com/trainerbill/generator-github-create'
+      appUrl: 'https://git.empdev.domo.com/CustomApps/generator-github-create'
     });
 
     let ghsetup = {
@@ -107,9 +107,14 @@ class GithubAuthenticateGenerator extends _yeomanGenerator.Base {
 
     return shell.getUsername().then(username => {
       /* istanbul ignore next: tough to test */
-      if (!this.options.username) {
+      if (!this.options.username && username) {
         this.options.username = username;
       }
+
+      return shell.getPassword();
+    }).then(password => {
+      /* istanbul ignore next: tough to test */
+      this.password = password;
     }).then(github.init(ghsetup)).then(() => {
       return [{
         name: 'username',
@@ -124,9 +129,20 @@ class GithubAuthenticateGenerator extends _yeomanGenerator.Base {
         message: 'Save username to git config?  Will make generation faster next time',
         default: 'Y'
       }, {
+        when: answers => {
+          return !this.password || answers.username !== this.options.username;
+        },
         type: 'password',
         name: 'password',
         message: 'Github Password'
+      }, {
+        when: answers => {
+          return answers.password !== undefined && answers.password !== this.options.password;
+        },
+        type: 'confirm',
+        name: 'savepassword',
+        message: 'Save password to git config?  Will make generation faster next time',
+        default: 'Y'
       }, {
         type: 'confirm',
         name: 'twofactor',
@@ -140,7 +156,7 @@ class GithubAuthenticateGenerator extends _yeomanGenerator.Base {
         message: 'Two Factor Code'
       }];
     }).then(prompts => this.prompt(prompts)).then(answers => {
-      this.password = answers.password;
+      this.password = this.password || answers.password;
       this.twofactorcode = answers.twofactorcode;
       delete answers.password;
       delete answers.twofactorcode;
@@ -148,13 +164,24 @@ class GithubAuthenticateGenerator extends _yeomanGenerator.Base {
       if (answers.saveuser) {
         shell.saveUsername(answers.username);
       }
+      /* istanbul ignore next: tough to test */
+      if (answers.savepassword) {
+        shell.savePassword(this.password);
+      }
       this.config.set('authenticate', answers);
       return answers;
-    }).then(answers => github.authenticate(answers.username, this.password)).then(() => github.getAuthorization(this.options.appName)).then(authorization => github.deleteAuthorization(authorization)).then(() => github.createAuthorization({ appName: this.options.appName, appUrl: this.options.appUrl, scopes: this.options.scopes }, this.twofactorcode)).then(() => {
+    }).then(answers => github.authenticate(answers.username, this.password)).then(() => this._authorize()).then(() => {
       this.config.save();
     });
   }
 
+  _authorize() {
+    if (this.options.host === 'api.github.com' && !this.options.path) {
+      return github.getAuthorization(this.options.appName).then(authorization => github.deleteAuthorization(authorization)).then(() => github.createAuthorization({ appName: this.options.appName, appUrl: this.options.appUrl, scopes: this.options.scopes }, this.twofactorcode));
+    } else {
+      return true;
+    }
+  }
 }
 
 module.exports = GithubAuthenticateGenerator;

@@ -75,7 +75,8 @@ class GitCreateGenerator extends Base {
     });
 
     return github.getOrgs()
-      .then(orgs => {
+      .then(res => {
+        const orgs = res.data || res;
         let choices = orgs.map(function(item) { return item.login; });
         return [
           {
@@ -97,6 +98,10 @@ class GitCreateGenerator extends Base {
       })
       .then(prompts => this.prompt(prompts))
       .then(answers => {
+        if (answers.useOrg) {
+          this.options.org = answers.org;
+        }
+
         this.config.set('create', answers);
       })
       .then(() => github.getRepos(this.options))
@@ -169,14 +174,16 @@ class GitCreateGenerator extends Base {
   }
 
   default() {
-    let config = this.config.get('create');
+    let currentConfig = this.config.get('create');
 
-    return github.createRepository(config)
-      .then(repo => {
-        this.config.set('create', merge(this.config.get('create'), { urls: [ repo.html_url, repo.ssh_url, repo.clone_url ] }));
-        this.config.save();
+    return github.createRepository(currentConfig)
+      .then(res => {
+        const repo = res.data || res;
+        const newConfig = merge(this.config.get('create'), { urls: [ repo.html_url, repo.ssh_url, repo.clone_url ] });
+        this.config.set('create', newConfig);
+        return newConfig;
       })
-      .then(() => {
+      .then((config) => {
         if (config.init) {
           return shell.gitInit()
             .then(() => shell.gitRemote(config));
@@ -207,7 +214,13 @@ class GitCreateGenerator extends Base {
   install() {
     if (this.config.get('create').push) {
       return shell.gitCommit()
-        .then(() => shell.gitPush());
+        .then(() => shell.gitPush())
+        .then(() => {
+          const config = this.config.get('create');
+          const repoName = config.name;
+          const owner = config.org || github.escapeUsername(this.options.username);
+          github.setRepoDefaults(repoName, owner);
+        });
     }
   }
 

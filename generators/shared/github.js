@@ -13,6 +13,10 @@ exports.createAuthorization = createAuthorization;
 exports.getOrgs = getOrgs;
 exports.getRepos = getRepos;
 exports.createRepository = createRepository;
+exports.setRepoDefaults = setRepoDefaults;
+exports.setMasterBranchProtection = setMasterBranchProtection;
+exports.createJenkinsHook = createJenkinsHook;
+exports.escapeUsername = escapeUsername;
 
 var _lodash = require('lodash');
 
@@ -115,7 +119,7 @@ function getRepos(config) {
         return resolve(res);
       });
     } else {
-      github.repos.getForUser({ user: config.user, page: '1', per_page: '100' }, (err, res) => {
+      github.repos.getForUser({ username: escapeUsername(config.username), page: '1', per_page: '100' }, (err, res) => {
         if (err) {
           return reject(err);
         }
@@ -127,26 +131,25 @@ function getRepos(config) {
 
 function createRepository(config) {
   return new Promise((resolve, reject) => {
+    const body = {
+      name: config.name,
+      description: config.description,
+      private: config.private,
+      auto_init: false,
+      allow_merge_commit: false,
+      allow_rebase_merge: false,
+      allow_squash_merge: true
+    };
+
     if (config.org) {
-      github.repos.createForOrg({
-        org: config.org,
-        name: config.name,
-        description: config.description,
-        private: config.private,
-        auto_init: false
-      }, (err, res) => {
+      github.repos.createForOrg(Object.assign({}, body, { org: config.org }), (err, res) => {
         if (err) {
           return reject(err);
         }
         return resolve(res);
       });
     } else {
-      github.repos.create({
-        name: config.name,
-        description: config.description,
-        private: config.private,
-        auto_init: false
-      }, (err, res) => {
+      github.repos.create(body, (err, res) => {
         if (err) {
           return reject(err);
         }
@@ -154,4 +157,55 @@ function createRepository(config) {
       });
     }
   });
+}
+
+function setRepoDefaults(name, owner) {
+  return Promise.all([setMasterBranchProtection(name, owner), createJenkinsHook(name, owner)]);
+}
+
+function setMasterBranchProtection(name, owner) {
+  return new Promise((resolve, reject) => {
+    github.repos.updateBranchProtection({
+      owner,
+      repo: name,
+      branch: 'master',
+      required_status_checks: {
+        include_admins: true,
+        strict: true,
+        contexts: ['default']
+      },
+      required_pull_request_reviews: {
+        include_admins: true,
+        dismiss_stale_reviews: true
+      },
+      restrictions: null
+    }, (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+}
+
+function createJenkinsHook(name, owner) {
+  return new Promise((resolve, reject) => {
+    github.repos.createHook({
+      owner,
+      repo: name,
+      name: 'jenkins',
+      config: {
+        jenkins_hook_url: 'http://pipeline.domo.com/github-webhook/'
+      }
+    }, (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+}
+
+function escapeUsername(username) {
+  return username.replace('.', '-');
 }

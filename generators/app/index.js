@@ -22,9 +22,9 @@ class GitGenerator extends _yeomanGenerator.Base {
 
     this.argument('generators', {
       type: Array,
-      defaults: ['authenticate', 'orgs', 'create', 'readme', 'gitinit', 'gitpush'],
+      defaults: ['authenticate', 'create'],
       required: false,
-      desc: 'List of generators to use. Ex: yo github-create orgs create readme'
+      desc: 'List of generators to use. Ex: yo github-create authenticate'
     });
   }
 
@@ -46,21 +46,6 @@ class GitGenerator extends _yeomanGenerator.Base {
         options: {
           org: this.config.get('orgs') ? this.config.get('orgs').org : undefined,
           user: this.config.get('authenticate') ? this.config.get('authenticate').user : undefined
-        }
-      });
-    }
-  }
-
-  writing() {
-    let config = this.config.get('app');
-
-    if (this.generators.indexOf('readme') !== -1) {
-      this.composeWith('github-create:readme', {
-        options: {
-          profile: this.config.get('orgs') ? this.config.get('orgs').org : undefined || this.config.get('authenticate') ? this.config.get('authenticate').user : undefined,
-          repository: this.config.get('create') ? this.config.get('create').name : undefined,
-          title: this.config.get('create') ? this.config.get('create').name : undefined,
-          description: this.config.get('create') ? this.config.get('create').description : undefined
         }
       });
     }

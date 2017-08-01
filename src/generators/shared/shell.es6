@@ -1,118 +1,68 @@
 import shell from 'shelljs';
 
-
-export function getUsername() {
+function executeGit(cmd) {
   return new Promise((resolve, reject) => {
     if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
+      return reject('This script requires local git installed');
     }
 
-    shell.exec('git config --get user.githubuser', { silent: true }, (code, stdout, stderr) => {
+    shell.exec(cmd, { silent: true }, (code, stdout, stderr) => {
       if (code !== 0) {
         return reject(stderr);
       }
+
       return resolve(stdout.trim());
     });
-
   });
+}
 
+export function getUsername() {
+  return executeGit('git config --global --get domoapps.user')
+    .catch(err => {
+      console.error(err);
+
+      return false;
+    });
+}
+
+export function getPassword() {
+  return executeGit('git config --global --get domoapps.token')
+    .catch(err => {
+      console.error(err);
+
+      return false;
+    });
 }
 
 export function saveEmail(email) {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git config --global user.email "' + email + '"', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit(`git config --global user.email "${email}"`);
 }
 
 export function saveName(name) {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git config --global user.name "' + name + '"', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit(`git config --global user.name "${name}"`);
 }
 
 export function saveUsername(username) {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git config --global user.githubuser "' + username + '"', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit(`git config --global domoapps.user "${username}"`);
+}
+
+export function savePassword(password) {
+  return executeGit(`git config --global domoapps.token "${password}"`);
 }
 
 export function gitInit() {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git init', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit('git init');
 }
 
 export function gitRemote(config) {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git remote add origin ' + config.urls[1], { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve(config);
-    });
-  });
+  return executeGit(`git remote add origin ${config.urls[1]}`);
 }
 
 export function gitCommit() {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git add -A && git commit -m "Initial Commit"', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit('git add -A && git commit -m "Initial Commit"');
 }
 
 
 export function gitPush() {
-  return new Promise((resolve, reject) => {
-    if (!shell.which('git')) {
-      return reject('This script requires local git installed!');
-    }
-    shell.exec('git push -u origin master', { silent: true }, (code, stdout, stderr) => {
-      if (code !== 0) {
-        return reject(stderr);
-      }
-      return resolve();
-    });
-  });
+  return executeGit('git push -u origin master');
 }
