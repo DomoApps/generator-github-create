@@ -26,7 +26,7 @@ class GitGenerator extends Base {
   initializing() {
     this.log(yosay('Welcome to the github repository generator!'));
     if(this.generators.indexOf('authenticate') !== -1) {
-      this.composeWith('github-create:authenticate', {
+      this.composeWith(require.resolve('../authenticate'), {
         options: {
           debug: this.options.debug
         }
@@ -38,7 +38,7 @@ class GitGenerator extends Base {
   default() {
 
     if(this.generators.indexOf('create') !== -1) {
-      this.composeWith('github-create:create', {
+      this.composeWith(require.resolve('../create'), {
         options: {
           org: this.config.get('orgs') ? this.config.get('orgs').org : undefined,
           user: this.config.get('authenticate') ? this.config.get('authenticate').user : undefined,
